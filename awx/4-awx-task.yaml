@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-task
+  namespace: awx
+  labels:
+    app: awx
+    role: task
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awx
+      role: task
+  template:
+    metadata:
+      labels:
+        app: awx
+        role: task
+    spec:
+      containers:
+      - name: awx-task
+        image: ansible/awx_task:9.0.1
+        env:
+        - name: DATABASE_HOST
+          value: awx-db-svc
+        - name: DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: awx-psgl
+              optional: false
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: MEMCACHED_HOST
+          value: awx-cache-svc
+        - name: MEMCACHED_PORT
+          value: "11211"
+        - name: RABBITMQ_HOST
+          value: awx-queue-svc
+        - name: RABBITMQ_PASSWORD
+          value: guest
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          value: guest
+        - name: RABBITMQ_VHOST
+          value: awx
+        - name: AWX_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: "awx-secrets"
+              key: username
+        - name: AWX_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "awx-secrets"
+              key: password          
+        volumeMounts:
+        - mountPath: /etc/tower/SECRET_KEY
+          name: awx-configs
+          subPath: SECRET_KEY
+        - mountPath: /etc/tower/settings.py
+          name: awx-configs
+          subPath: settings.py
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: awx-configs
+        name: awx-configs

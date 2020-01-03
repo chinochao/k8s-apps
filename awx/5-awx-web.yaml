@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-web
+  namespace: awx
+  labels:
+    app: awx
+    role: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awx
+      role: web
+  template:
+    metadata:
+      labels:
+        app: awx
+        role: web
+    spec:
+      containers:
+      - name: awx-web
+        image: ansible/awx_web:9.0.1
+        ports:
+        - name: http
+          containerPort: 8052
+        env:
+        - name: DATABASE_HOST
+          value: awx-db-svc
+        - name: DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: awx-psgl
+              optional: false
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: MEMCACHED_HOST
+          value: awx-cache-svc
+        - name: MEMCACHED_PORT
+          value: "11211"
+        - name: RABBITMQ_HOST
+          value: awx-queue-svc
+        - name: RABBITMQ_PASSWORD
+          value: guest
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          value: guest
+        - name: RABBITMQ_VHOST
+          value: awx
+        volumeMounts:
+        - mountPath: /etc/tower/SECRET_KEY
+          name: awx-configs
+          subPath: SECRET_KEY
+        - mountPath: /etc/tower/settings.py
+          name: awx-configs
+          subPath: settings.py
+        - mountPath: /etc/nginx/nginx.conf
+          name: awx-configs
+          subPath: nginx.conf
+      volumes:
+      - configMap:
+          defaultMode: 0666
+          name: awx-configs
+        name: awx-configs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: awx-web-svc
+  namespace: awx
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8052
+  selector:
+    app: awx
+    role: web
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: awx-lb
+  namespace: awx
+spec:
+  rules:
+  - host: awx.apps.robertochaud.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: awx-web-svc
+          servicePort: 80
+  tls:
+  - hosts:
+    - awx.apps.robertochaud.com
+    secretName: apps-robertochaud-com-wildcard

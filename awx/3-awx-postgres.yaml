@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: awx-postgres-pvc
+  namespace: awx
+  labels:
+    app: awx
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: nfs-client
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awx-db
+  namespace: awx
+  labels:
+    app: awx
+    role: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awx
+      role: database
+  template:
+    metadata:
+      labels:
+        app: awx
+        role: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:10.11
+        ports:
+        - name: postgres
+          containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: awx-psgl
+              optional: false
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: awx-psgl
+              optional: false
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: awx-db-data
+      volumes:
+      - name: awx-db-data
+        persistentVolumeClaim:
+          claimName: awx-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: awx-db-svc
+  namespace: awx
+spec:
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: awx
+    role: database

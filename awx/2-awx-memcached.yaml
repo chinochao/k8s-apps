@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: awx-cache
+  namespace: awx
+  labels:
+    app: awx
+    role: cache
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: awx
+        role: cache
+    spec:
+      containers:
+      - name: memcached
+        image: memcached:alpine
+        ports:
+        - name: memcached
+          containerPort: 11211
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: awx-cache-svc
+  namespace: awx
+spec:
+  ports:
+  - name: memcached
+    port: 11211
+    targetPort: 11211
+  selector:
+    app: awx
+    role: cache
