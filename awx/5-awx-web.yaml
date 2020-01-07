@@ -18,6 +18,29 @@ spec:
         app: awx
         role: web
     spec:
+      initContainers:
+        ### Create Custom VENV for Ansible Modules
+        - image: 'centos:7'
+          name: main-custom-venvs
+          command:
+            - sh
+            - '-c'
+            - >-
+              yum install -y ansible curl python-setuptools epel-release \
+                openssl openssl-devel gcc python-devel &&
+              yum install -y python-virtualenv python36 python36-devel &&
+              mkdir -p /opt/custom_venv/main &&
+              virtualenv -p python3.6 /opt/custom_venv/main &&
+              source /opt/custom_venv/main/bin/activate &&
+              /opt/custom_venv/main/bin/pip install -U psutil ansible &&
+              /opt/custom_venv/main/bin/pip install -U \
+                docker \
+                docker-compose &&
+              deactivate &&
+              :
+          volumeMounts:
+            - name: main-custom-venvs
+              mountPath: /opt/custom_venv/main      
       containers:
       - name: awx-web
         image: ansible/awx_web:9.0.1
@@ -71,11 +94,17 @@ spec:
         - mountPath: /etc/nginx/nginx.conf
           name: awx-configs
           subPath: nginx.conf
+        ### Custom VENV for Ansible Modules
+        - name: main-custom-venvs
+          mountPath: /opt/custom_venv/main
       volumes:
       - configMap:
           defaultMode: 0666
           name: awx-configs
         name: awx-configs
+      ### Custom VENV for Ansible Modules
+      - name: main-custom-venvs
+        emptyDir: {}
 
 ---
 apiVersion: v1
