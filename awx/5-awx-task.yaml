@@ -76,7 +76,7 @@ spec:
           subPath: settings.py
         ### Custom VENV for Ansible Modules
         - name: awx-custom-venvs
-          mountPath: /opt/custom_venv/
+          mountPath: /opt/custom-venvs/
       volumes:
       - configMap:
           defaultMode: 420
