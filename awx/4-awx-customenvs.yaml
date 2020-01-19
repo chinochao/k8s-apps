@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: awx-virtualenvs-pvc
+  namespace: awx
+  labels:
+    app: awx
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: nfs-client
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: awx-virtualenvs
+  namespace: awx
+  labels:
+    app: awx
+    role: virtualenvs
+spec:
+  template:
+    metadata:
+      labels:
+        app: awx
+        role: virtualenvs
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: awx-virtualenvs
+        image: chaudric/awx_virtualenvs:0.1
+        imagePullPolicy: Always
+        env:
+        - name: YAML_URL
+          value: https://raw.githubusercontent.com/chinochao/docker-images/master/awx_virtualenvs/extra_vars_example.yaml
+        volumeMounts:
+          - name: awx-custom-venvs
+            mountPath: /opt/custom-venvs/
+      volumes:
+        - name: awx-custom-venvs
+          persistentVolumeClaim:
+            claimName: awx-virtualenvs-pvc

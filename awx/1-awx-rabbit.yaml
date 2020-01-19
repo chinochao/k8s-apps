@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: awx-queue
@@ -8,6 +8,10 @@ metadata:
     role: queue
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: awx
+      role: queue
   template:
     metadata:
       labels:
