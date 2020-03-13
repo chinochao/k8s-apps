@@ -112,7 +112,7 @@ data:
   nginx.conf: |
     #user awx;
 
-    worker_processes  1;
+    worker_processes  2;
 
     pid        /tmp/nginx.pid;
 

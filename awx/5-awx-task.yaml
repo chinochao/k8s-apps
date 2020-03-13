@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: awx-task
-        image: ansible/awx_task:9.0.1
+        image: ansible/awx_task:9.3.0
         env:
         - name: DATABASE_HOST
           value: awx-db-svc
