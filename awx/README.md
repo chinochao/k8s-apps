@@ -1,12 +1,5 @@
 # AWX K8s Deployment
 
-# Pre Deployment
-Create Secrets named:
-awx-psgl with username and password
-awx-secrets with username and password
-
-Create Certificate for your Load Balance
-
 ## Deployment
 Deploy in order:
 
