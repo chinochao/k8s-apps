@@ -24,6 +24,8 @@ spec:
         - name: http
           containerPort: 8052
         env:
+        - name: LDAPTLS_REQCERT
+          value: never
         - name: DATABASE_HOST
           value: awx-db-svc
         - name: DATABASE_NAME
